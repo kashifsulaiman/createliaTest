@@ -9,7 +9,9 @@ class Products extends Component {
             extraData: [],
             page: 1,
             loading: false,
-            ended: false
+            ended: false,
+            usedImages: [],
+            requestedFor: []
         }
         this.handleScroll = this.handleScroll.bind(this);
     }
@@ -86,23 +88,30 @@ class Products extends Component {
         });
     }
 
-    renderRows(product, index){
-        var rows = [0, 1].map((elem) => {
-            if(!elem) {
-                return <tr id={index + 'bhan'} key={index}>
-                    <th scope="row">{product.id}</th>
-                    <td style={{fontSize: product.size}}>{product.face}</td>
-                    <td>{product.size}</td>
-                    <td>${product.price/100}</td>
-                    <td>{this.formatDate(product.date)}</td>
-                    {!(index % 20) && <td></td>}
-                </tr>
-            } else {
-                return <div><p>But first, a word from our sponsors:</p> <img src={'http://localhost:3000/ads/?r=' + Math.floor(Math.random()*10000)}/></div>
+    getImage(index){
+        var {usedImages, requestedFor} = this.state;
+        let isUsed = usedImages.filter(e => e.index === index).length;
+        if (!isUsed && !requestedFor.includes(index)) {
+            this.setState({requestedFor: this.state.requestedFor.concat([index])});
 
-            }
-        })
-        return rows
+            fetch('http://localhost:3000/ads/?r=' + Math.floor(Math.random()*1000)).then((resp) => {
+                let image = resp.url,
+                    isImageUsed = usedImages.filter(e => e.image === image).length;
+
+                usedImages.push({index, image: isImageUsed ? this.generateNewUrl(image) : image});
+                this.setState(usedImages);
+            })
+        }
+
+    }
+
+    generateNewUrl(image){
+        let randomNumber = Math.floor(Math.random() * 25);
+        var imageArray = image.split("=");
+        imageArray[1] = randomNumber;
+        image = imageArray.join("=");
+        let isUsed = this.state.usedImages.filter(e => e.image === image).length;
+        return isUsed ? this.generateNewUrl(image) : image;
     }
 
     sort(value){
@@ -118,6 +127,28 @@ class Products extends Component {
             console.log('There has been a problem with your fetch operation: ', error.message);
             this.setState({loading: false});
         });
+    }
+
+    renderRows(product, index){
+        var {usedImages} = this.state;
+        var rows = [0, 1].map((elem) => {
+            if(!elem) {
+                return <tr id={index + 'bhan'} key={index}>
+                    <th scope="row">{product.id}</th>
+                    <td style={{fontSize: product.size}}>{product.face}</td>
+                    <td>{product.size}</td>
+                    <td>${product.price/100}</td>
+                    <td>{this.formatDate(product.date)}</td>
+                    {!(index % 20) && <td></td>}
+                </tr>
+            } else {
+                {this.getImage(index)}
+                var obj = usedImages.filter((e) => e.index == index);
+                return <div><p>But first, a word from our sponsors:</p> <img src={obj.length && obj[0].image} alt="Loading ad..."/></div>
+
+            }
+        });
+        return rows
     }
 
     render() {
