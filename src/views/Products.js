@@ -6,6 +6,7 @@ class Products extends Component {
         super(props);
         this.state = {
             data: [],
+            extraData: [],
             page: 1,
             loading: false,
             ended: false
@@ -15,7 +16,7 @@ class Products extends Component {
 
     componentWillMount(){
         this.totalRecords();
-        this.getProducts(this.state.page, 20)
+        this.getProducts(this.state.page, 40)
     }
 
     componentDidMount() {
@@ -45,7 +46,6 @@ class Products extends Component {
         const docHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight,  html.scrollHeight, html.offsetHeight);
         const windowBottom = windowHeight + window.pageYOffset;
         if (windowBottom >= docHeight) {
-            console.log('bottom reached');
             if(data.length < total){
                 !loading && this.getProducts(page + 1, data.length + 20 > total ? total - data.length : 20);
             }
@@ -64,23 +64,72 @@ class Products extends Component {
     }
 
     getProducts(page, limit){
-        console.log(page, limit)
+        const {data, extraData, sortBy} = this.state;
+        if(extraData.length){
+            this.setState({data: this.state.data.concat(extraData)})
+        }
         this.setState({page, limit, loading: true});
-        fetch('http://localhost:3000/products?_page=' + page + '&_limit=' + limit).then((resp) => resp.json()) // Transform the data into json
-            .then((data) => {
-                console.log('data*****');
-                console.log(this.state.data.concat(data));
-                this.setState({data: this.state.data.concat(data), loading: false});
-                // Create and append the li's to the ul
+        var url = 'http://localhost:3000/products?_page=' + page + '&_limit=' + limit;
+        sortBy && (url += '&_sort=' + sortBy);
+        fetch(url).then((resp) => resp.json()) // Transform the data into json
+            .then((newData) => {
+                if(!data.length){
+                    let extraData = newData.slice(20);
+                    newData.length = 20;
+                    this.setState({data: newData, extraData, loading: false});
+                } else {
+                    this.setState({extraData: newData, loading: false});
+                }
             }).catch(function(error) {
                 console.log('There has been a problem with your fetch operation: ', error.message);
                 this.setState({loading: false});
         });
     }
 
+    renderRows(product, index){
+        var rows = [0, 1].map((elem) => {
+            if(!elem) {
+                return <tr id={index + 'bhan'} key={index}>
+                    <th scope="row">{product.id}</th>
+                    <td style={{fontSize: product.size}}>{product.face}</td>
+                    <td>{product.size}</td>
+                    <td>${product.price/100}</td>
+                    <td>{this.formatDate(product.date)}</td>
+                    {!(index % 20) && <td></td>}
+                </tr>
+            } else {
+                return <div><p>But first, a word from our sponsors:</p> <img src={'http://localhost:3000/ads/?r=' + Math.floor(Math.random()*10000)}/></div>
+
+            }
+        })
+        return rows
+    }
+
+    sort(value){
+        const {data} = this.state;
+        this.setState({sortBy: value, loading: true});
+        var url = 'http://localhost:3000/products?_page=' + 0 + '&_limit=' + 40 + '&_sort=' + value;
+        fetch(url).then((resp) => resp.json()) // Transform the data into json
+            .then((newData) => {
+                let extraData = newData.slice(20);
+                newData.length = 20;
+                this.setState({data: newData, extraData, loading: false});
+            }).catch(function(error) {
+            console.log('There has been a problem with your fetch operation: ', error.message);
+            this.setState({loading: false});
+        });
+    }
+
     render() {
         const {data, loading, ended} = this.state;
         return <div>
+            <label>Sort By </label>
+            <select onChange={(e) => this.sort(e.target.value)}>
+                <option>None</option>
+                <option value="id">Id</option>
+                <option value="size">Size</option>
+                <option value="price">Price</option>
+            </select>
             <div className="table-responsive-sm">
                 <table className="table">
                     <thead>
@@ -94,14 +143,18 @@ class Products extends Component {
                     </thead>
                     <tbody>
                     {data.map((product, index) => {
-                        return <tr key={index}>
-                            <th scope="row">{product.id}</th>
-                            <td style={{fontSize: product.size}}>{product.face}</td>
-                            <td>{product.size}</td>
-                            <td>${product.price/100}</td>
-                            <td>{this.formatDate(product.date)}</td>
-                            {!(index % 20) && <td><img src={'http://localhost:3000/ads/?r=' + Math.floor(Math.random()*1000)}/></td>}
-                        </tr>
+                        if(index && !(index % 20)) {
+                            return this.renderRows(product, index)
+                        }
+                        else {
+                            return <tr id={index} key={index}>
+                                <th scope="row">{product.id}</th>
+                                <td style={{fontSize: product.size}}>{product.face}</td>
+                                <td>{product.size}</td>
+                                <td>${product.price/100}</td>
+                                <td>{this.formatDate(product.date)}</td>
+                            </tr>
+                        }
                     })
                     }
                     </tbody>
