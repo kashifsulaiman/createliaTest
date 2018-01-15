@@ -82,9 +82,9 @@ class Products extends Component {
                 } else {
                     this.setState({extraData: newData, loading: false});
                 }
-            }).catch(function(error) {
-                console.log('There has been a problem with your fetch operation: ', error.message);
-                this.setState({loading: false});
+            }).catch((error) => {
+            console.log('There has been a problem with your fetch operation: ', error.message);
+            this.setState({loading: false});
         });
     }
 
@@ -100,24 +100,26 @@ class Products extends Component {
 
                 usedImages.push({index, image: isImageUsed ? this.generateNewUrl(image) : image});
                 this.setState(usedImages);
+            }).catch((error) => {
+                console.log('There has been a problem with your fetch operation: ', error.message);
             })
         }
 
     }
 
     generateNewUrl(image){
+        const {ended} = this.state;
         let randomNumber = Math.floor(Math.random() * 25);
         var imageArray = image.split("=");
         imageArray[1] = randomNumber;
         image = imageArray.join("=");
         let isUsed = this.state.usedImages.filter(e => e.image === image).length;
-        return isUsed ? this.generateNewUrl(image) : image;
+        return isUsed && !ended ? this.generateNewUrl(image) : image;
     }
 
     sort(value){
-        const {data} = this.state;
-        this.setState({sortBy: value, loading: true});
-        var url = 'http://localhost:3000/products?_page=' + 0 + '&_limit=' + 40 + '&_sort=' + value;
+        this.setState({sortBy: value, data: [], extraData: [], page: 1, ended: false, loading: true});
+        var url = 'http://localhost:3000/products?_page=' + 1 + '&_limit=' + 40 + '&_sort=' + value;
         fetch(url).then((resp) => resp.json()) // Transform the data into json
             .then((newData) => {
                 let extraData = newData.slice(20);
@@ -133,19 +135,19 @@ class Products extends Component {
         var {usedImages} = this.state;
         var rows = [0, 1].map((elem) => {
             if(!elem) {
-                return <tr id={index + 'bhan'} key={index}>
+                return <tr id={index + '_a'} key={index + '_a'}>
                     <th scope="row">{product.id}</th>
                     <td style={{fontSize: product.size}}>{product.face}</td>
                     <td>{product.size}</td>
                     <td>${product.price/100}</td>
                     <td>{this.formatDate(product.date)}</td>
-                    {!(index % 20) && <td></td>}
                 </tr>
             } else {
-                {this.getImage(index)}
-                var obj = usedImages.filter((e) => e.index == index);
-                return <div><p>But first, a word from our sponsors:</p> <img src={obj.length && obj[0].image} alt="Loading ad..."/></div>
-
+                this.getImage(index);
+                var obj = usedImages.filter((e) => e.index === index);
+                return <tr id={index + '_b'} key={index + '_b'}>
+                            <td colSpan="5"><div style={styles.randomImage}><p>But first, a word from our sponsors:</p> <img src={obj.length ? obj[0].image : require('../assets/image_loading.gif')} alt="Loading ad..." width="320" height="200"/></div></td>
+                        </tr>
             }
         });
         return rows
@@ -154,16 +156,16 @@ class Products extends Component {
     render() {
         const {data, loading, ended} = this.state;
         return <div>
-            <label>Sort By </label>
-            <select onChange={(e) => this.sort(e.target.value)}>
+            <label style={styles.selectLabel}>Sort By </label>
+            <select style={styles.select} onChange={(e) => this.sort(e.target.value)}>
                 <option>None</option>
                 <option value="id">Id</option>
                 <option value="size">Size</option>
                 <option value="price">Price</option>
             </select>
             <div className="table-responsive-sm">
-                <table className="table">
-                    <thead>
+                <table className="table table-striped table-bordered " style={styles.table}>
+                    <thead  style={styles.tableHead}>
                     <tr>
                         <th scope="col">Id</th>
                         <th scope="col">Face</th>
@@ -191,9 +193,9 @@ class Products extends Component {
                     </tbody>
                 </table>
                 {loading && <div style={{textAlign: 'center', marginBottom: 30}}>
-                    <img src={require('../assets/loading.gif')} width="30"/> loading...
+                    <img src={require('../assets/loading.gif')} alt="Loading..." width="30"/> loading...
                 </div>}
-                {ended && <div style={{textAlign: 'center', marginBottom: 30}}>
+                {ended && <div style={{textAlign: 'center', marginBottom: 30, fontSize: '2.5em'}}>
                     ~ end of catalogue ~
                 </div>}
             </div>
@@ -202,3 +204,33 @@ class Products extends Component {
 }
 
 export default Products;
+
+const styles = {
+    table: {
+        textAlign: 'center',
+        boxShadow: '0px 0px 14px 0px'
+    },
+    tableHead:{
+        backgroundColor: 'black'
+    },
+    select:{
+        backgroundColor: '#cec6cd',
+        padding: '10px',
+        color: 'white',
+        fontWeight: 500,
+        fontSize: 16,
+        marginBottom: 10,
+        marginLeft:10,
+        border: 'none'
+    },
+    selectLabel: {
+        fontWeight: 400,
+        marginLeft: 10,
+        fontSize: 20
+    },
+    randomImage: {
+        margin: 10,
+        border: '2px solid'
+    }
+
+}

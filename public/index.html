@@ -3,14 +3,21 @@
 <head>
     <title>Products Grid</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css" integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous">
+    <style>
+        .random-image{
+            margin-top:10px;
+            margin-bottom:10px;
+            margin-left:10px
+        }
+    </style>
 </head>
-<body>
+<body style="background-color: rgb(49, 124, 124); color: white; margin-left: auto; margin-right: auto; width: 1000px; font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif">
 <header>
-    <h1>Products Grid</h1>
+    <h1 style="margin-top: 45px; font-size: 50px">Products Grid</h1>
 
     <p>Here you're sure to find a bargain on some of the finest ascii available to purchase. Be sure to peruse our selection of ascii faces in an exciting range of sizes and prices.</p>
 
-    <p>But first, a word from our sponsors:</p> <script>document.write('<img class="ad" src="http://localhost:3000/ads/?r=' + Math.floor(Math.random()*1000) + '"/>');</script>
+    <p>But first, a word from our sponsors:</p> <script>document.write('<img class="ad random-image" src="http://localhost:3000/ads/?r=' + Math.floor(Math.random()*1000) + '"/>');</script>
     <br /><br /><hr />
 </header>
 <section class="products">
